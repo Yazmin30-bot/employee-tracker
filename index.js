@@ -99,7 +99,7 @@ const startPrompt = () => {
             break;
   
           case 'Add Department':
-            //addDepartment();
+            addDepartment();
             break;
   
           case 'Remove Department':
@@ -190,7 +190,7 @@ const startPrompt = () => {
 
   //Add an employee
   const addEmployee = () => {
-    connection.query('SELECT concat(id," ",title) as rolid FROM role; SELECT concat(man_id," ", manager) as manid FROM (SELECT  employee.id, employee.first_name, employee.last_name, role.title, role.salary, concat(m.first_name," ", m.last_name) as manager, m.id as man_id  FROM employee LEFT OUTER JOIN employee m ON employee.manager_id = m.id INNER JOIN role ON role.id = employee.role_id INNER JOIN department ON department.id = role.department_id GROUP by employee.manager_id ORDER by employee.id ) as manager LEFT OUTER JOIN employee r ON manager.man_id = r.id;', (err, results) => {
+    connection.query('SELECT concat(id," ",title) as rolid FROM role; SELECT concat(id,".- ",first_name," ", last_name) as manid FROM employee', (err, results) => {
       if (err) throw err;
       inquirer
         .prompt([
@@ -456,7 +456,8 @@ const startPrompt = () => {
             choices() {
               return results.map((item) => item.remrol);
             },
-            message: 'What role would you like to remove?',
+            message: 'What role would you like to remove?(Warning: This will also remove associated employees)',
+            
           },
         ])
         .then((answer) => {
@@ -481,4 +482,32 @@ const startPrompt = () => {
       console.table(transformed)
       startPrompt();
     });
+  }
+
+  //Add a new department
+  const addDepartment = () => {
+    inquirer
+      .prompt([
+        {
+          name: 'name',
+          type: 'input',
+          message: 'What is the name of the department?',
+        }
+      ])
+      .then((answer) => {
+        let query = 'INSERT INTO department SET ?';
+        connection.query(
+          query,
+          {
+            name: answer.name,
+          },
+          (err) => {
+            if (err) throw err;
+            console.log('Your department was added successfully!');
+            // re-prompt the user for if they want to bid or post
+            startPrompt();
+          }
+        );
+      });
+  
   }
