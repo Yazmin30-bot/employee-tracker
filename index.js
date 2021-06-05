@@ -55,7 +55,7 @@ const startPrompt = () => {
         //With the selected option call its function 
         switch (answer.action) {
           case 'View All Employees':
-            //allEmployees(); 
+            allEmployees(); 
             break;
   
           case 'View All Employees By Department':
@@ -120,4 +120,16 @@ const startPrompt = () => {
             break;
         }
       });
+  };
+
+  //Show a table join the employee role and department table
+  const allEmployees = () => {
+    let query = 'SELECT  employee.id, employee.first_name, employee.last_name, role.title, department.name as department, role.salary, concat(m.first_name," ", m.last_name) as manager FROM employee LEFT OUTER JOIN employee m ON employee.manager_id = m.id INNER JOIN role ON role.id = employee.role_id INNER JOIN department ON department.id = role.department_id ORDER by employee.id';
+    connection.query(query, (err, res) => {
+      if (err) throw err;
+      // Log all results of the SELECT statement
+      const transformed = res.reduce((acc, {id, ...x }) => { acc[id] = x; return acc }, {})
+      console.table(transformed);
+      startPrompt();
+    });
   };
