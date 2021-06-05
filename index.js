@@ -539,5 +539,34 @@ const startPrompt = () => {
   
   }
 
-  
+  //View the total utilized budget of a department
+  const budgetDepartment = () => {
+    connection.query('SELECT * FROM department', (err, results) => {
+      if (err) throw err;
+      inquirer
+        .prompt([
+          {
+            name: 'choice',
+            type: 'list',
+            choices() {
+              return results.map((item) => item.name);
+            },
+            message: 'Which department would you like to see the total utilized budget ?',
+          },
+        ])
+        .then((answer) => {
+          let query = 'SELECT SUM(salaryfi) total FROM (SELECT  employee.id, employee.first_name, employee.last_name, role.title, department.name as department, role.salary as salaryfi, concat(m.first_name," ", m.last_name) as manager FROM employee LEFT OUTER JOIN employee m ON employee.manager_id = m.id INNER JOIN role ON role.id = employee.role_id INNER JOIN department ON department.id = role.department_id ORDER by employee.id) as y WHERE department = ? ';
+          connection.query(query, [answer.choice], (err, res) => {
+            if (err) throw err;
+            const total = 'The total utilized budget of a '+answer.choice+' department is $'+ res[Object.keys(res)[0]].total;
+            //console.log(res[Object.keys(res)[0]].total);
+            console.log('------------------------------------------------------------------------------------');
+            console.log(total);
+            console.log('------------------------------------------------------------------------------------');
+            
+            startPrompt();
+          });
+        });
+    });
+  }
   
