@@ -79,11 +79,11 @@ const startPrompt = () => {
             break;
   
           case 'Update Employee Manager':
-            //updateEmployeeManager();
+            updateEmployeeManager();
             break;
   
           case 'View All Roles':
-            //allRoles(); 
+            allRoles(); 
             break;
   
           case 'Add Role':
@@ -332,6 +332,70 @@ const startPrompt = () => {
             startPrompt();
           });
         });
+    });
+  
+  }
+
+  //Update the manager employee
+  const updateEmployeeManager = () => {
+    connection.query('SELECT concat(id,".- ",first_name," ", last_name) as updemp FROM employee; SELECT IFNULL(manid, "None") AS Resultfinal from (SELECT concat(man_id," ", manager) as manid FROM (SELECT  employee.id, employee.first_name, employee.last_name, role.title, role.salary, concat(m.first_name," ", m.last_name) as manager, m.id as man_id  FROM employee LEFT OUTER JOIN employee m ON employee.manager_id = m.id INNER JOIN role ON role.id = employee.role_id INNER JOIN department ON department.id = role.department_id GROUP by employee.manager_id ORDER by employee.id ) as manager LEFT OUTER JOIN employee r ON manager.man_id = r.id) as manageridfinal ;', (err, results) => {
+      if (err) throw err;
+      inquirer
+        .prompt([
+          {
+            name: 'choice',
+            type: 'list',
+            choices() {
+              return results[0].map((item) => item.updemp);
+            },
+            message: "Which employee's manager do you want to  update?",
+          },
+          {
+            name: 'manager_id',
+            type: 'list',
+            choices() {
+              return results[1].map((item) => item.Resultfinal);
+            },
+            message: "What is the employee's manager?",
+          },
+  
+        ])
+        .then((answer) => {
+          const strman = answer.manager_id;
+          var manid = null;
+          if (strman !== 'None') {
+            manid = parseInt(strman.slice(0, strman.indexOf(' ')));
+          }
+  
+          const strid = answer.choice;
+          const strnameid = parseInt(strid.slice(0, strid.indexOf('.- ')));
+          let query = 'UPDATE employee SET ? WHERE ?';
+          connection.query(query, [
+            {
+              manager_id: manid,
+            },
+            {
+              id: strnameid,
+            },
+          ], (err, res) => {
+            if (err) throw err;
+            console.log("Employee's manager was updated successfully!");
+            startPrompt();
+          });
+        });
+    });
+  
+  }
+
+  //Show all the roles
+  const allRoles = () => {
+    let query = 'SELECT id, title FROM role';
+    connection.query(query, (err, res) => {
+      if (err) throw err;
+      // Log all results of the SELECT statement
+      const transformed = res.reduce((acc, { id, ...x }) => { acc[id] = x; return acc }, {})
+      console.table(transformed)
+      startPrompt();
     });
   
   }
