@@ -67,7 +67,7 @@ const startPrompt = () => {
             break;
   
           case 'Add Employee':
-            //addEmployee();
+            addEmployee();
             break;
   
           case 'Remove Employee':
@@ -185,6 +185,80 @@ const startPrompt = () => {
             console.table(transformed)
             startPrompt();
           });
+        });
+    });
+  };
+
+  //Add an employee
+  const addEmployee = () => {
+    connection.query('SELECT concat(id," ",title) as rolid FROM role; SELECT concat(man_id," ", manager) as manid FROM (SELECT  employee.id, employee.first_name, employee.last_name, role.title, role.salary, concat(m.first_name," ", m.last_name) as manager, m.id as man_id  FROM employee LEFT OUTER JOIN employee m ON employee.manager_id = m.id INNER JOIN role ON role.id = employee.role_id INNER JOIN department ON department.id = role.department_id GROUP by employee.manager_id ORDER by employee.id ) as manager LEFT OUTER JOIN employee r ON manager.man_id = r.id;', (err, results) => {
+      if (err) throw err;
+      inquirer
+        .prompt([
+          {
+            name: 'first_name',
+            type: 'input',
+            message: "What is the employee's first name?",
+          },
+          {
+            name: 'last_name',
+            type: 'input',
+            message: "What is the employee's last name?",
+          },
+          {
+            name: 'role_id',
+            type: 'list',
+            choices() {
+              return results[0].map((item) => item.rolid);
+            },
+            message: "What is the employee's role?",
+          },
+          {
+            name: 'manager_id',
+            type: 'list',
+            choices() {
+              const choiceArray = [];
+              results[1].forEach(({ manid }) => {
+                if (manid == null) {
+                  choiceArray.push('None');
+                } else {
+                  choiceArray.push(manid);
+                }
+              });
+              return choiceArray;
+            },
+  
+            message: "What is the employee's manager?",
+          },
+        ])
+        .then((answer) => {
+          const strman = answer.manager_id;
+          var strmanid = null;
+          if (strman !== 'None') {
+            strmanid = parseInt(strman.slice(0, strman.indexOf(' ')));
+            console.log(strmanid);
+          }
+  
+          const strrol = answer.role_id;
+          const strrolid = parseInt(strrol.slice(0, strrol.indexOf(' ')));
+          let query = 'INSERT INTO employee SET ?';
+          connection.query(
+            query,
+            {
+              first_name: answer.first_name,
+              last_name: answer.last_name,
+              role_id: strrolid,
+              manager_id: strmanid,
+            },
+            (err) => {
+              if (err) {
+                throw err,
+                console.log("Make sure that the role id and manager id exist")
+              };
+              console.log('A new employee was created successfully!');
+              startPrompt();
+            }
+          );
         });
     });
   };
