@@ -95,7 +95,7 @@ const startPrompt = () => {
             break;
   
           case 'View All Departments':
-            //allDepartments();
+            allDepartments();
             break;
   
           case 'Add Department':
@@ -469,4 +469,16 @@ const startPrompt = () => {
         });
     });
   
+  }
+
+  //Show all departments
+  const allDepartments = () => {
+    let query = 'SELECT id, name FROM department';
+    connection.query(query, (err, res) => {
+      if (err) throw err;
+      // Log all results of the SELECT statement
+      const transformed = res.reduce((acc, { id, ...x }) => { acc[id] = x; return acc }, {})
+      console.table(transformed)
+      startPrompt();
+    });
   }
