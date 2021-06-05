@@ -71,11 +71,11 @@ const startPrompt = () => {
             break;
   
           case 'Remove Employee':
-            //removeEmployee();
+            removeEmployee();
             break;
   
           case 'Update Employee Role':
-            //updateEmployeeRole();
+            updateEmployeeRole();
             break;
   
           case 'Update Employee Manager':
@@ -262,3 +262,76 @@ const startPrompt = () => {
         });
     });
   };
+
+  //Remove an selected employee
+  const removeEmployee = () => {
+    connection.query('SELECT concat(id,".- ",first_name," ", last_name) as rememp FROM employee', (err, results) => {
+      if (err) throw err;
+      inquirer
+        .prompt([
+          {
+            name: 'choice',
+            type: 'list',
+            choices() {
+              return results.map((item) => item.rememp);
+            },
+            message: 'What employee would you like to remove?',
+          },
+        ])
+        .then((answer) => {
+          let query = 'DELETE FROM employee WHERE concat(id,".- ",first_name," ", last_name) = ?';
+          connection.query(query, [answer.choice], (err, res) => {
+            if (err) throw err;
+            console.log('An employee was removed successfully!');
+            startPrompt();
+          });
+        });
+    });
+  }
+
+  //Update the role employee
+  const updateEmployeeRole = () => {
+    connection.query('SELECT concat(id,".- ",first_name," ", last_name) as updemp FROM employee;SELECT concat(id," ",title) as rolid FROM role', (err, results) => {
+      if (err) throw err;
+      inquirer
+        .prompt([
+          {
+            name: 'choice',
+            type: 'list',
+            choices() {
+              return results[0].map((item) => item.updemp);
+            },
+            message: "Which employee's role do you want to  update?",
+          },
+          {
+            name: 'role_id',
+            type: 'list',
+            choices() {
+              return results[1].map((item) => item.rolid);
+            },
+            message: "What is the employee's role?",
+          },
+  
+        ])
+        .then((answer) => {
+          const strrol = answer.role_id;
+          const strrolid = parseInt(strrol.slice(0, strrol.indexOf(' ')));
+          const strid = answer.choice;
+          const strnameid = parseInt(strid.slice(0, strid.indexOf('.- ')));
+          let query = 'UPDATE employee SET ? WHERE ?';
+          connection.query(query, [
+            {
+              role_id: strrolid,
+            },
+            {
+              id: strnameid,
+            },
+          ], (err, res) => {
+            if (err) throw err;
+            console.log("Employee's role was updated successfully!");
+            startPrompt();
+          });
+        });
+    });
+  
+  }
