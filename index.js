@@ -59,7 +59,7 @@ const startPrompt = () => {
             break;
   
           case 'View All Employees By Department':
-            //departmentEmployees();
+            departmentEmployees();
             break;
   
           case 'View All Employees By Manager':
@@ -131,5 +131,32 @@ const startPrompt = () => {
       const transformed = res.reduce((acc, {id, ...x }) => { acc[id] = x; return acc }, {})
       console.table(transformed);
       startPrompt();
+    });
+  };
+
+  //Show all employees by selected department
+  const departmentEmployees = () => {
+    connection.query('SELECT * FROM department', (err, results) => {
+      if (err) throw err;
+      inquirer
+        .prompt([
+          {
+            name: 'choice',
+            type: 'list',
+            choices() {
+              return results.map((item) => item.name);
+            },
+            message: 'Which department would you like to see employees for ?',
+          },
+        ])
+        .then((answer) => {
+          let query = 'SELECT  employee.id, employee.first_name, employee.last_name, role.title, role.salary, concat(m.first_name," ", m.last_name) as manager FROM employee LEFT OUTER JOIN employee m ON employee.manager_id = m.id INNER JOIN role ON role.id = employee.role_id INNER JOIN department ON department.id = role.department_id WHERE department.name = ? ORDER by employee.id ';
+          connection.query(query, [answer.choice], (err, res) => {
+            if (err) throw err;
+            const transformed = res.reduce((acc, { id, ...x }) => { acc[id] = x; return acc }, {})
+            console.table(transformed)
+            startPrompt();
+          });
+        });
     });
   };
