@@ -87,11 +87,11 @@ const startPrompt = () => {
             break;
   
           case 'Add Role':
-            //addRole();
+            addRole();
             break;
   
           case 'Remove Role':
-            //removeRole();
+            removeRole();
             break;
   
           case 'View All Departments':
@@ -127,7 +127,6 @@ const startPrompt = () => {
     let query = 'SELECT  employee.id, employee.first_name, employee.last_name, role.title, department.name as department, role.salary, concat(m.first_name," ", m.last_name) as manager FROM employee LEFT OUTER JOIN employee m ON employee.manager_id = m.id INNER JOIN role ON role.id = employee.role_id INNER JOIN department ON department.id = role.department_id ORDER by employee.id';
     connection.query(query, (err, res) => {
       if (err) throw err;
-      // Log all results of the SELECT statement
       const transformed = res.reduce((acc, {id, ...x }) => { acc[id] = x; return acc }, {})
       console.table(transformed);
       startPrompt();
@@ -392,10 +391,82 @@ const startPrompt = () => {
     let query = 'SELECT id, title FROM role';
     connection.query(query, (err, res) => {
       if (err) throw err;
-      // Log all results of the SELECT statement
       const transformed = res.reduce((acc, { id, ...x }) => { acc[id] = x; return acc }, {})
       console.table(transformed)
       startPrompt();
+    });
+  
+  }
+
+  //Add a new role
+  const addRole = () => {
+    connection.query('SELECT concat(id," ",name) as depid FROM department', (err, results) => {
+      if (err) throw err;
+      inquirer
+        .prompt([
+          {
+            name: 'name',
+            type: 'input',
+            message: 'What is the name of the role?',
+          },
+          {
+            name: 'salary',
+            type: 'input',
+            message: 'What is the salary of the role?',
+          },
+          {
+            name: 'choice',
+            type: 'list',
+            choices() {
+              return results.map((item) => item.depid);
+            },
+            message: 'Which department does the role belong to ?',
+          },
+        ])
+        .then((answer) => {
+          const strdep = answer.choice;
+          const strdepid = parseInt(strdep.slice(0, strdep.indexOf(' ')));
+          let query = 'INSERT INTO role SET ?';
+          connection.query(
+            query,
+            {
+              title: answer.name,
+              salary: parseInt(answer.salary),
+              department_id: strdepid
+            },
+            (err) => {
+              if (err) throw err;
+              console.log('Your role was added successfully!');
+              startPrompt();
+            }
+          );
+        })
+    })
+  }
+
+  //Remove a role
+  const removeRole = () => {
+    connection.query('SELECT concat(id,".- ",title) as remrol FROM role', (err, results) => {
+      if (err) throw err;
+      inquirer
+        .prompt([
+          {
+            name: 'choice',
+            type: 'list',
+            choices() {
+              return results.map((item) => item.remrol);
+            },
+            message: 'What role would you like to remove?',
+          },
+        ])
+        .then((answer) => {
+          let query = 'DELETE FROM role WHERE concat(id,".- ",title) = ?';
+          connection.query(query, [answer.choice], (err, res) => {
+            if (err) throw err;
+            console.log('Role was removed successfully!');
+            startPrompt();
+          });
+        });
     });
   
   }
