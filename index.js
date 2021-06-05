@@ -63,7 +63,7 @@ const startPrompt = () => {
             break;
   
           case 'View All Employees By Manager':
-            //managerEmployees(); 
+            managerEmployees(); 
             break;
   
           case 'Add Employee':
@@ -151,6 +151,34 @@ const startPrompt = () => {
         ])
         .then((answer) => {
           let query = 'SELECT  employee.id, employee.first_name, employee.last_name, role.title, role.salary, concat(m.first_name," ", m.last_name) as manager FROM employee LEFT OUTER JOIN employee m ON employee.manager_id = m.id INNER JOIN role ON role.id = employee.role_id INNER JOIN department ON department.id = role.department_id WHERE department.name = ? ORDER by employee.id ';
+          connection.query(query, [answer.choice], (err, res) => {
+            if (err) throw err;
+            const transformed = res.reduce((acc, { id, ...x }) => { acc[id] = x; return acc }, {})
+            console.table(transformed)
+            startPrompt();
+          });
+        });
+    });
+  };
+
+  //Show all employees by selected manager
+  const managerEmployees = () => {
+    let query = 'SELECT  employee.id, employee.first_name, employee.last_name, role.title, department.name as department, role.salary, concat(m.first_name," ", m.last_name) as manager FROM employee LEFT OUTER JOIN employee m ON employee.manager_id = m.id INNER JOIN role ON role.id = employee.role_id INNER JOIN department ON department.id = role.department_id WHERE employee.manager_id IS NOT NULL GROUP by employee.manager_id ORDER by employee.id';
+    connection.query(query, (err, results) => {
+      if (err) throw err;
+      inquirer
+        .prompt([
+          {
+            name: 'choice',
+            type: 'list',
+            choices() {
+              return results.map((item) => item.manager);
+            },
+            message: 'What manager would you like to choose?',
+          },
+        ])
+        .then((answer) => {
+          let query = 'SELECT id, first_name, last_name, title, department, salary  FROM (SELECT  employee.id, employee.first_name, employee.last_name, role.title, department.name as department, role.salary, concat(m.first_name," ", m.last_name) as manager FROM employee LEFT OUTER JOIN employee m ON employee.manager_id = m.id INNER JOIN role ON role.id = employee.role_id INNER JOIN department ON department.id = role.department_id  ORDER by employee.id ) AS r  WHERE r.manager= ?'
           connection.query(query, [answer.choice], (err, res) => {
             if (err) throw err;
             const transformed = res.reduce((acc, { id, ...x }) => { acc[id] = x; return acc }, {})
