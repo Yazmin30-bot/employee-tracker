@@ -103,11 +103,11 @@ const startPrompt = () => {
             break;
   
           case 'Remove Department':
-            //removeDepartment();
+            removeDepartment();
             break;
   
           case 'View the total utilized budget of a department':
-            //budgetDepartment();
+            budgetDepartment();
             break;
   
           case 'Quit':
@@ -511,3 +511,33 @@ const startPrompt = () => {
       });
   
   }
+
+  //Remove a selected department
+  const removeDepartment = () => {
+    connection.query('SELECT concat(id,".- ",name) as remdep FROM department', (err, results) => {
+      if (err) throw err;
+      inquirer
+        .prompt([
+          {
+            name: 'choice',
+            type: 'list',
+            choices() {
+              return results.map((item) => item.remdep);
+            },
+            message: 'What department would you like to remove? (Warning: This will also remove associated roles and employees)',
+          },
+        ])
+        .then((answer) => {
+          let query = 'DELETE FROM department WHERE concat(id,".- ",name) = ?';
+          connection.query(query, [answer.choice], (err, res) => {
+            if (err) throw err;
+            console.log('Department was removed successfully!');
+            startPrompt();
+          });
+        });
+    });
+  
+  }
+
+  
+  
